@@ -1,0 +1,87 @@
+[
+  {
+    "isbn": "9788535909554",
+    "titulo": "Capitães da Areia",
+    "autor": "Jorge Amado",
+    "secao": "Ficção",
+    "preco_base": 49.9,
+    "quantidade": 8,
+    "tipo": "novo"
+  },
+  {
+    "isbn": "9788535914849",
+    "titulo": "Dom Casmurro",
+    "autor": "Machado de Assis",
+    "secao": "Clássicos",
+    "preco_base": 40.0,
+    "quantidade": 3,
+    "tipo": "usado",
+    "estado_conservacao": "BOM"
+  },
+  {
+    "isbn": "9788525406958",
+    "titulo": "O Pequeno Príncipe",
+    "autor": "Antoine de Saint-Exupéry",
+    "secao": "Ficção",
+    "preco_base": 35.0,
+    "quantidade": 12,
+    "tipo": "novo"
+  },
+  {
+    "isbn": "9780141439518",
+    "titulo": "Pride and Prejudice",
+    "autor": "Jane Austen",
+    "secao": "Clássicos",
+    "preco_base": 150.0,
+    "quantidade": 1,
+    "tipo": "raro",
+    "grau_raridade": "MUITO_RARO"
+  },
+  {
+    "isbn": "9788508178009",
+    "titulo": "1984",
+    "autor": "George Orwell",
+    "secao": "Ficção Científica",
+    "preco_base": 45.0,
+    "quantidade": 0,
+    "tipo": "usado",
+    "estado_conservacao": "REGULAR"
+  },
+  {
+    "isbn": "9788572326508",
+    "titulo": "Memórias Póstumas de Brás Cubas",
+    "autor": "Machado de Assis",
+    "secao": "Clássicos",
+    "preco_base": 80.0,
+    "quantidade": 2,
+    "tipo": "raro",
+    "grau_raridade": "INCOMUM"
+  },
+  {
+    "isbn": "9780141438",
+    "titulo": "TESTE 222",
+    "autor": "TESTE",
+    "secao": "TESTE",
+    "preco_base": 50.0,
+    "quantidade": 2,
+    "tipo": "novo"
+  },
+  {
+    "isbn": "9780141499",
+    "titulo": "OK",
+    "autor": "AUTOR 11",
+    "secao": "TE",
+    "preco_base": 50.0,
+    "quantidade": 1,
+    "tipo": "novo"
+  },
+  {
+    "isbn": "7878454545",
+    "titulo": "TESTE",
+    "autor": "TESTE",
+    "secao": "Clássico",
+    "preco_base": 50.0,
+    "quantidade": 1,
+    "tipo": "novo"
+  }
+]
