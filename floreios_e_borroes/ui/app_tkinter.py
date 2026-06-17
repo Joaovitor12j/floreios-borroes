@@ -6,8 +6,10 @@ from typing import Any
 from dominio.item_acervo import Livro
 from dominio.livro_raro import GrauRaridade
 from dominio.livro_usado import EstadoConservacao
+from dominio.usuario import Administrador, Usuario
 from servicos.catalogo import Catalogo
 from servicos.estoque import Estoque
+from servicos.usuarios import EmailJaCadastradoError, Usuarios
 
 COR_FUNDO = "#F4ECD8"
 COR_CARTAO = "#FFFDF7"
@@ -33,11 +35,20 @@ TIPO_PARA_ROTULO = {tipo: rotulo for rotulo, tipo in ROTULO_PARA_TIPO.items()}
 
 
 class App(tk.Tk):
-    def __init__(self, catalogo: Catalogo, estoque: Estoque, persistir: Callable[[], None]) -> None:
+    def __init__(
+        self,
+        catalogo: Catalogo,
+        estoque: Estoque,
+        usuarios: Usuarios,
+        persistir_acervo: Callable[[], None],
+        persistir_usuarios: Callable[[], None],
+    ) -> None:
         super().__init__()
         self.title("Floreios e Borrões")
         self.geometry("1024x640")
         self.configure(background=COR_FUNDO)
+
+        self._usuario_atual: Usuario | None = None
 
         self._configurar_estilo()
         self._montar_navegacao()
@@ -48,28 +59,63 @@ class App(tk.Tk):
         container.columnconfigure(0, weight=1)
 
         self._telas: dict[str, ttk.Frame] = {
+            "login": TelaLogin(
+                container,
+                usuarios,
+                ao_autenticar=self._ao_autenticar,
+                ir_para_cadastro=lambda: self.mostrar_tela("cadastro"),
+            ),
+            "cadastro": TelaCadastro(
+                container,
+                usuarios,
+                persistir_usuarios,
+                ao_autenticar=self._ao_autenticar,
+                voltar_para_login=lambda: self.mostrar_tela("login"),
+            ),
             "cliente": TelaCliente(container, catalogo),
-            "admin": TelaAdministrador(container, estoque, persistir),
+            "admin": TelaAdministrador(container, estoque, persistir_acervo),
         }
         for tela in self._telas.values():
             tela.grid(row=0, column=0, sticky="nsew")
 
-        self.mostrar_tela("cliente")
+        self.mostrar_tela("login")
 
     def mostrar_tela(self, nome: str) -> None:
         tela = self._telas[nome]
         tela.tkraise()
         tela.atualizar()
 
+    def _ao_autenticar(self, usuario: Usuario) -> None:
+        self._usuario_atual = usuario
+        self._atualizar_navegacao()
+        self.mostrar_tela("admin" if isinstance(usuario, Administrador) else "cliente")
+
+    def _sair(self) -> None:
+        self._usuario_atual = None
+        self._atualizar_navegacao()
+        self._telas["login"].limpar()
+        self.mostrar_tela("login")
+
     def _montar_navegacao(self) -> None:
         barra = ttk.Frame(self, style="Navegacao.TFrame", padding=(16, 10))
         barra.pack(fill="x")
 
         ttk.Label(barra, text="Floreios e Borrões", style="Titulo.TLabel").pack(side="left")
-        ttk.Button(barra, text="Administração", command=lambda: self.mostrar_tela("admin")).pack(
-            side="right", padx=(8, 0)
-        )
-        ttk.Button(barra, text="Catálogo", command=lambda: self.mostrar_tela("cliente")).pack(side="right")
+
+        self._area_usuario = ttk.Frame(barra, style="Navegacao.TFrame")
+        self._area_usuario.pack(side="right")
+        self._atualizar_navegacao()
+
+    def _atualizar_navegacao(self) -> None:
+        for filho in self._area_usuario.winfo_children():
+            filho.destroy()
+
+        if self._usuario_atual is None:
+            return
+
+        texto = f"{self._usuario_atual.nome} · {self._usuario_atual.nivel_acesso().capitalize()}"
+        ttk.Label(self._area_usuario, text=texto, style="Titulo.TLabel").pack(side="left", padx=(0, 12))
+        ttk.Button(self._area_usuario, text="Sair", command=self._sair).pack(side="left")
 
     def _configurar_estilo(self) -> None:
         estilo = ttk.Style(self)
@@ -89,6 +135,159 @@ class App(tk.Tk):
 
         estilo.configure("Treeview", background=COR_CARTAO, fieldbackground=COR_CARTAO, font=FONTE_CORPO, rowheight=24)
         estilo.configure("Treeview.Heading", font=FONTE_CORPO_NEGRITO, foreground=COR_DESTAQUE, background=COR_FUNDO)
+
+
+class TelaLogin(ttk.Frame):
+    def __init__(
+        self,
+        master: tk.Misc,
+        usuarios: Usuarios,
+        ao_autenticar: Callable[[Usuario], None],
+        ir_para_cadastro: Callable[[], None],
+    ) -> None:
+        super().__init__(master, padding=16)
+        self._usuarios = usuarios
+        self._ao_autenticar = ao_autenticar
+        self._ir_para_cadastro = ir_para_cadastro
+
+        self._var_email = tk.StringVar()
+        self._var_senha = tk.StringVar()
+
+        self._montar()
+
+    def atualizar(self) -> None:
+        pass
+
+    def limpar(self) -> None:
+        self._var_email.set("")
+        self._var_senha.set("")
+
+    def _montar(self) -> None:
+        cartao = ttk.Frame(self, style="Cartao.TFrame", padding=24)
+        cartao.place(relx=0.5, rely=0.5, anchor="center")
+
+        ttk.Label(cartao, text="Entrar", style="CartaoTitulo.TLabel").grid(
+            row=0, column=0, columnspan=2, sticky="w", pady=(0, 16)
+        )
+
+        ttk.Label(cartao, text="E-mail", style="Cartao.TLabel").grid(row=1, column=0, columnspan=2, sticky="w")
+        campo_email = ttk.Entry(cartao, textvariable=self._var_email, width=30)
+        campo_email.grid(row=2, column=0, columnspan=2, sticky="we", pady=(0, 12))
+
+        ttk.Label(cartao, text="Senha", style="Cartao.TLabel").grid(row=3, column=0, columnspan=2, sticky="w")
+        campo_senha = ttk.Entry(cartao, textvariable=self._var_senha, show="•", width=30)
+        campo_senha.grid(row=4, column=0, columnspan=2, sticky="we", pady=(0, 16))
+        campo_senha.bind("<Return>", lambda _evento: self._entrar())
+
+        ttk.Button(cartao, text="Entrar", command=self._entrar).grid(
+            row=5, column=0, columnspan=2, sticky="we", pady=(0, 8)
+        )
+        ttk.Button(cartao, text="Criar conta de cliente", command=self._ir_para_cadastro).grid(
+            row=6, column=0, columnspan=2, sticky="we"
+        )
+
+    def _entrar(self) -> None:
+        email = self._var_email.get().strip()
+        senha = self._var_senha.get()
+
+        if not email or not senha:
+            messagebox.showerror("Dados inválidos", "Informe e-mail e senha.")
+            return
+
+        usuario = self._usuarios.autenticar(email, senha)
+        if usuario is None:
+            messagebox.showerror("Falha no login", "E-mail ou senha incorretos.")
+            return
+
+        self.limpar()
+        self._ao_autenticar(usuario)
+
+
+class TelaCadastro(ttk.Frame):
+    def __init__(
+        self,
+        master: tk.Misc,
+        usuarios: Usuarios,
+        persistir_usuarios: Callable[[], None],
+        ao_autenticar: Callable[[Usuario], None],
+        voltar_para_login: Callable[[], None],
+    ) -> None:
+        super().__init__(master, padding=16)
+        self._usuarios = usuarios
+        self._persistir_usuarios = persistir_usuarios
+        self._ao_autenticar = ao_autenticar
+        self._voltar_para_login = voltar_para_login
+
+        self._var_nome = tk.StringVar()
+        self._var_email = tk.StringVar()
+        self._var_senha = tk.StringVar()
+        self._var_confirmar_senha = tk.StringVar()
+
+        self._montar()
+
+    def atualizar(self) -> None:
+        pass
+
+    def limpar(self) -> None:
+        for variavel in (self._var_nome, self._var_email, self._var_senha, self._var_confirmar_senha):
+            variavel.set("")
+
+    def _montar(self) -> None:
+        cartao = ttk.Frame(self, style="Cartao.TFrame", padding=24)
+        cartao.place(relx=0.5, rely=0.5, anchor="center")
+
+        ttk.Label(cartao, text="Criar conta de cliente", style="CartaoTitulo.TLabel").grid(
+            row=0, column=0, columnspan=2, sticky="w", pady=(0, 16)
+        )
+
+        linha = self._criar_campo(cartao, 1, "Nome", self._var_nome)
+        linha = self._criar_campo(cartao, linha, "E-mail", self._var_email)
+        linha = self._criar_campo(cartao, linha, "Senha", self._var_senha, ocultar=True)
+        linha = self._criar_campo(cartao, linha, "Confirmar senha", self._var_confirmar_senha, ocultar=True)
+
+        ttk.Button(cartao, text="Cadastrar", command=self._cadastrar).grid(
+            row=linha, column=0, columnspan=2, sticky="we", pady=(8, 8)
+        )
+        linha += 1
+        ttk.Button(cartao, text="Já tenho conta — voltar ao login", command=self._voltar).grid(
+            row=linha, column=0, columnspan=2, sticky="we"
+        )
+
+    def _criar_campo(
+        self, master: tk.Misc, linha: int, rotulo: str, variavel: tk.StringVar, ocultar: bool = False
+    ) -> int:
+        ttk.Label(master, text=rotulo, style="Cartao.TLabel").grid(row=linha, column=0, columnspan=2, sticky="w")
+        entrada = ttk.Entry(master, textvariable=variavel, width=30, show="•" if ocultar else "")
+        entrada.grid(row=linha + 1, column=0, columnspan=2, sticky="we", pady=(0, 12))
+        return linha + 2
+
+    def _voltar(self) -> None:
+        self.limpar()
+        self._voltar_para_login()
+
+    def _cadastrar(self) -> None:
+        nome = self._var_nome.get().strip()
+        email = self._var_email.get().strip()
+        senha = self._var_senha.get()
+        confirmar_senha = self._var_confirmar_senha.get()
+
+        if not nome or not email or not senha:
+            messagebox.showerror("Dados inválidos", "Nome, e-mail e senha são obrigatórios.")
+            return
+        if senha != confirmar_senha:
+            messagebox.showerror("Dados inválidos", "As senhas não coincidem.")
+            return
+
+        try:
+            cliente = self._usuarios.cadastrar_cliente(nome=nome, email=email, senha=senha)
+        except EmailJaCadastradoError as erro:
+            messagebox.showerror("Erro ao cadastrar", str(erro))
+            return
+
+        self._persistir_usuarios()
+        self.limpar()
+        messagebox.showinfo("Conta criada", "Cadastro realizado com sucesso. Você já está logado.")
+        self._ao_autenticar(cliente)
 
 
 class TelaCliente(ttk.Frame):

@@ -1,0 +1,21 @@
+[
+  {
+    "nome": "Administradora Geral",
+    "email": "admin@floreioseborroes.com.br",
+    "senha": "admin123",
+    "tipo": "administrador",
+    "cargo": "Gerente da loja"
+  },
+  {
+    "nome": "Cliente Exemplo",
+    "email": "cliente@exemplo.com",
+    "senha": "123456",
+    "tipo": "cliente"
+  },
+  {
+    "nome": "Brunno",
+    "email": "brunno@exemplo.com",
+    "senha": "123321",
+    "tipo": "cliente"
+  }
+]

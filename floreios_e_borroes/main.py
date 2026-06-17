@@ -1,11 +1,14 @@
 from pathlib import Path
 
 from infra.repositorio_json import RepositorioJson
+from infra.repositorio_usuarios_json import RepositorioUsuariosJson
 from servicos.catalogo import Catalogo
 from servicos.estoque import Estoque
+from servicos.usuarios import Usuarios
 from ui.app_tkinter import App
 
 CAMINHO_ACERVO = Path(__file__).resolve().parent / "dados" / "acervo.json"
+CAMINHO_USUARIOS = Path(__file__).resolve().parent / "dados" / "usuarios.json"
 
 
 def main() -> None:
@@ -13,7 +16,16 @@ def main() -> None:
     estoque = Estoque(repositorio.carregar())
     catalogo = Catalogo(estoque)
 
-    app = App(catalogo, estoque, persistir=lambda: repositorio.salvar(estoque.livros))
+    repositorio_usuarios = RepositorioUsuariosJson(CAMINHO_USUARIOS)
+    usuarios = Usuarios(repositorio_usuarios.carregar())
+
+    app = App(
+        catalogo,
+        estoque,
+        usuarios,
+        persistir_acervo=lambda: repositorio.salvar(estoque.livros),
+        persistir_usuarios=lambda: repositorio_usuarios.salvar(usuarios.usuarios)
+    )
     app.mainloop()
 
 
