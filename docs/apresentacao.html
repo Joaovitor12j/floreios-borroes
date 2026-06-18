@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Floreios e Borrões — Apresentação G2</title>
+<style>
+  :root {
+    --marrom: #5C3A21;
+    --marrom-escuro: #3B2412;
+    --bege: #F4ECD8;
+    --card: #FFFDF7;
+    --creme: #FBF6EC;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--marrom-escuro);
+    font-family: Helvetica, Arial, sans-serif;
+    color: var(--marrom-escuro);
+    overflow: hidden;
+  }
+
+  h1, h2, h3 { font-family: Georgia, 'Times New Roman', serif; margin: 0 0 .4em 0; }
+
+  .deck {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    background: var(--bege);
+    display: none;
+    flex-direction: column;
+    padding: 56px 72px 40px;
+  }
+
+  .slide.active { display: flex; }
+
+  .slide .eyebrow {
+    font-size: 13px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--marrom);
+    font-weight: bold;
+    margin-bottom: 6px;
+  }
+
+  .slide h2 {
+    font-size: 34px;
+    color: var(--marrom-escuro);
+    border-bottom: 3px solid var(--marrom);
+    padding-bottom: 12px;
+    margin-bottom: 24px;
+  }
+
+  .slide .body { flex: 1; overflow: auto; }
+
+  /* ---- Capa ---- */
+  .cover {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: linear-gradient(160deg, var(--bege) 0%, #e9dcc0 100%);
+  }
+  .cover h1 { font-size: 52px; color: var(--marrom-escuro); }
+  .cover .subtitle { font-size: 20px; color: var(--marrom); margin-bottom: 36px; }
+  .cover .team { font-size: 16px; color: var(--marrom-escuro); }
+  .cover .team strong { display: block; font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--marrom); margin-bottom: 8px; }
+  .cover .team ul { list-style: none; padding: 0; margin: 0; }
+  .cover .team li { padding: 2px 0; }
+  .cover .ornament { font-size: 28px; color: var(--marrom); margin: 18px 0; }
+
+  /* ---- Conteúdo genérico ---- */
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .card {
+    background: var(--card);
+    border: 1px solid #d8c9a3;
+    border-radius: 6px;
+    padding: 18px 22px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.06);
+  }
+  .card h3 { color: var(--marrom); font-size: 18px; }
+  .card ul { margin: 0; padding-left: 20px; }
+  .card li { margin-bottom: 6px; line-height: 1.4; }
+  .lead { font-size: 17px; line-height: 1.6; }
+  .pill-row { display: flex; gap: 16px; margin-bottom: 18px; }
+  .pill {
+    background: var(--marrom);
+    color: var(--creme);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: bold;
+  }
+
+  table.spec { width: 100%; border-collapse: collapse; background: var(--card); }
+  table.spec th, table.spec td { border: 1px solid #d8c9a3; padding: 8px 12px; text-align: left; font-size: 14px; }
+  table.spec th { background: var(--marrom); color: var(--creme); }
+
+  /* ---- Diagrama de classes ---- */
+  .uml-forest { display: flex; gap: 60px; justify-content: center; align-items: flex-start; margin-top: 10px; }
+  .uml-tree { display: flex; flex-direction: column; align-items: center; }
+  .uml-box {
+    background: var(--card);
+    border: 2px solid var(--marrom);
+    border-radius: 4px;
+    padding: 8px 14px;
+    font-size: 12.5px;
+    text-align: left;
+    min-width: 150px;
+  }
+  .uml-box .name { font-weight: bold; text-align: center; border-bottom: 1px solid var(--marrom); padding-bottom: 4px; margin-bottom: 4px; display: block; }
+  .uml-box .name em { font-style: italic; font-weight: normal; font-size: 11px; display: block; color: var(--marrom); }
+  .uml-box .member { display: block; white-space: nowrap; }
+  .uml-stem { width: 1px; height: 22px; background: var(--marrom); }
+  .uml-bar { height: 1px; background: var(--marrom); margin: 0 auto; }
+  .uml-children { display: flex; gap: 26px; }
+  .uml-children > div { display: flex; flex-direction: column; align-items: center; }
+  .uml-services { display: flex; gap: 18px; justify-content: center; margin-top: 32px; flex-wrap: wrap; }
+
+  /* ---- Código ---- */
+  pre {
+    background: #2b1c10;
+    color: #f3e9d2;
+    padding: 16px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+    overflow: auto;
+    flex: 1;
+  }
+  pre .cm { color: #c9a875; }
+  .code-caption { font-size: 13.5px; color: var(--marrom-escuro); margin-top: 10px; }
+  .code-caption code { background: #e6d8b3; padding: 1px 5px; border-radius: 3px; }
+
+  /* ---- Telas (screenshots) ---- */
+  .screen-slide .body { display: flex; gap: 28px; align-items: flex-start; }
+  .screen-slide img {
+    max-height: 78vh;
+    max-width: 62%;
+    object-fit: contain;
+    border: 1px solid #c9b48a;
+    border-radius: 4px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.18);
+  }
+  .screen-caption { flex: 1; font-size: 16px; line-height: 1.6; }
+  .screen-caption ul { padding-left: 20px; }
+  .screen-caption li { margin-bottom: 8px; }
+
+  /* ---- Encerramento ---- */
+  .closing { align-items: center; justify-content: center; text-align: center; }
+  .closing h2 { border: none; }
+
+  /* ---- Controles ---- */
+  .nav {
+    position: fixed;
+    bottom: 18px;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    z-index: 10;
+  }
+  .nav button {
+    background: var(--marrom);
+    color: var(--creme);
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .nav button:hover { background: #4a2e1a; }
+  .nav button:disabled { opacity: .4; cursor: default; }
+  .nav .counter { color: var(--creme); font-size: 13px; min-width: 60px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+  <!-- 1. Capa -->
+  <section class="slide cover active">
+    <div class="ornament">❦</div>
+    <h1>Floreios e Borrões</h1>
+    <div class="subtitle">Catálogo digital e gestão de acervo para livraria</div>
+    <div class="team">
+      <strong>Equipe</strong>
+      <ul>
+        <li>Anderson Rodrigues</li>
+        <li>Brunno Colombo</li>
+        <li>João Vitor Santos</li>
+      </ul>
+    </div>
+    <div class="ornament">❦</div>
+    <div style="font-size:14px;color:var(--marrom)">Trabalho G2 — Programação Orientada a Objetos</div>
+  </section>
+
+  <!-- 2. Definição do Ambiente -->
+  <section class="slide">
+    <div class="eyebrow">Definição</div>
+    <h2>Ambiente de Execução</h2>
+    <div class="body">
+      <div class="cards">
+        <div class="card">
+          <h3>Contexto</h3>
+          <p class="lead">Extensão digital de uma livraria física localizada em um centro histórico. A proposta é simular a organização de uma biblioteca física, com estantes digitais, priorizando calmaria e imersão literária — em contraste com a agitação do cotidiano urbano.</p>
+        </div>
+        <div class="card">
+          <h3>Identidade Visual</h3>
+          <ul>
+            <li>Paleta em tons de <strong>marrom</strong> (couro/madeira) e <strong>bege</strong> (papel antigo)</li>
+            <li>Tipografia serifada nos títulos, transmitindo credibilidade e elegância</li>
+            <li>Fonte limpa e moderna no corpo de texto, garantindo legibilidade</li>
+            <li>Logotipo com ornamentos caligráficos</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Plataforma</h3>
+          <p class="lead">Aplicação desktop (Python + Tkinter), com persistência local em arquivos JSON — sem necessidade de servidor ou conexão externa.</p>
+        </div>
+        <div class="card">
+          <h3>Perfis de Usuário</h3>
+          <ul>
+            <li><strong>Cliente:</strong> leitores, estudantes e pesquisadores (18–65 anos) buscando curadoria de títulos e praticidade na consulta</li>
+            <li><strong>Administrador:</strong> funcionários da livraria responsáveis pela gestão do acervo</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Definição do Problema -->
+  <section class="slide">
+    <div class="eyebrow">Definição</div>
+    <h2>Definição do Problema</h2>
+    <div class="body">
+      <p class="lead" style="max-width:820px">
+        A livraria física possui um acervo vasto e rotativo, o que dificulta que clientes saibam se um título está
+        disponível antes de se deslocarem até o local. A ausência de um catálogo digital impede que novos leitores
+        conheçam a curadoria remotamente, limitando o alcance da livraria ao público que já transita fisicamente
+        pela região.
+      </p>
+      <div class="card" style="max-width:820px;margin-top:24px">
+        <h3>Consequência</h3>
+        <p class="lead">Sem visibilidade remota do estoque, a livraria perde oportunidades de venda e dificulta o trabalho
+        de gestão do próprio acervo, que depende de controle manual.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Requisitos -->
+  <section class="slide">
+    <div class="eyebrow">Especificação</div>
+    <h2>Requisitos Funcionais</h2>
+    <div class="body">
+      <div class="cards">
+        <div class="card">
+          <h3>Cliente</h3>
+          <ul>
+            <li>Login e cadastro de conta</li>
+            <li>Busca por título, autor ou seção</li>
+            <li>Catálogo digital com preço e status de estoque em tempo real</li>
+            <li>Filtros por categoria/seção e por estado de conservação</li>
+            <li>Carrinho de compras e finalização (checkout)</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Administrador</h3>
+          <ul>
+            <li>CRUD completo do catálogo (cadastrar, editar, excluir)</li>
+            <li>Cadastro de metadados (ISBN, título, autor, seção, preço)</li>
+            <li>Controle de quantidade em estoque por título</li>
+            <li>Painel com visão geral de todos os itens cadastrados</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Diagrama de Classes -->
+  <section class="slide">
+    <div class="eyebrow">Modelagem</div>
+    <h2>Diagrama de Classes</h2>
+    <div class="body">
+      <div class="uml-forest">
+        <div class="uml-tree">
+          <div class="uml-box">
+            <span class="name">Livro<em>«abstract»</em></span>
+            <span class="member">- __isbn: str</span>
+            <span class="member">+ titulo, autor, secao</span>
+            <span class="member">+ preco_base, quantidade</span>
+            <span class="member">- __validar_isbn()</span>
+            <span class="member">+ calcular_preco() *</span>
+            <span class="member">+ descricao_catalogo() *</span>
+          </div>
+          <div class="uml-stem"></div>
+          <div class="uml-bar" style="width:340px"></div>
+          <div class="uml-children" style="margin-top:0">
+            <div>
+              <div class="uml-stem" style="height:14px"></div>
+              <div class="uml-box">
+                <span class="name">LivroNovo</span>
+                <span class="member">calcular_preco()</span>
+                <span class="member">descricao_catalogo()</span>
+              </div>
+            </div>
+            <div>
+              <div class="uml-stem" style="height:14px"></div>
+              <div class="uml-box">
+                <span class="name">LivroUsado</span>
+                <span class="member">+ estado_conservacao</span>
+                <span class="member">calcular_preco()</span>
+                <span class="member">descricao_catalogo()</span>
+              </div>
+            </div>
+            <div>
+              <div class="uml-stem" style="height:14px"></div>
+              <div class="uml-box">
+                <span class="name">LivroRaro</span>
+                <span class="member">+ grau_raridade</span>
+                <span class="member">calcular_preco()</span>
+                <span class="member">descricao_catalogo()</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="uml-tree">
+          <div class="uml-box">
+            <span class="name">Usuario<em>«abstract»</em></span>
+            <span class="member">+ nome, email, senha</span>
+            <span class="member">+ verifica_senha()</span>
+            <span class="member">+ nivel_acesso() *</span>
+          </div>
+          <div class="uml-stem"></div>
+          <div class="uml-bar" style="width:200px"></div>
+          <div class="uml-children" style="margin-top:0">
+            <div>
+              <div class="uml-stem" style="height:14px"></div>
+              <div class="uml-box">
+                <span class="name">Cliente</span>
+                <span class="member">nivel_acesso()</span>
+              </div>
+            </div>
+            <div>
+              <div class="uml-stem" style="height:14px"></div>
+              <div class="uml-box">
+                <span class="name">Administrador</span>
+                <span class="member">+ cargo</span>
+                <span class="member">nivel_acesso()</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="uml-services">
+        <div class="uml-box"><span class="name">Estoque</span><span class="member">adicionar() (sobrecarregado)</span><span class="member">vender(), remover()</span></div>
+        <div class="uml-box"><span class="name">Catalogo</span><span class="member">buscar(), filtrar()</span></div>
+        <div class="uml-box"><span class="name">Usuarios</span><span class="member">autenticar(), cadastrar_cliente()</span></div>
+        <div class="uml-box"><span class="name">Caixa</span><span class="member">finalizar_venda()</span></div>
+        <div class="uml-box"><span class="name">Venda / ItemVenda</span><span class="member">total(), subtotal()</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. Código - Herança e Polimorfismo -->
+  <section class="slide">
+    <div class="eyebrow">Implementação</div>
+    <h2>Herança e Polimorfismo</h2>
+    <div class="body" style="display:flex;flex-direction:column;">
+<pre><span class="cm"># dominio/item_acervo.py</span>
+class Livro(ABC):
+    @abstractmethod
+    def calcular_preco(self) -> float: ...
+
+    @abstractmethod
+    def descricao_catalogo(self) -> str: ...
+
+
+<span class="cm"># dominio/livro_usado.py</span>
+class LivroUsado(Livro):
+    def calcular_preco(self) -> float:
+        return round(self.preco_base * self.estado_conservacao.fator_depreciacao(), 2)
+
+    def descricao_catalogo(self) -> str:
+        return f"{self._descricao_base()} (Usado — {self.estado_conservacao.value})"
+
+
+<span class="cm"># dominio/livro_raro.py</span>
+class LivroRaro(Livro):
+    def calcular_preco(self) -> float:
+        return round(self.preco_base * self.grau_raridade.fator_agio(), 2)
+
+    def descricao_catalogo(self) -> str:
+        return f"{self._descricao_base()} (Raro — {self.grau_raridade.value})"
+</pre>
+      <p class="code-caption">
+        <code>LivroNovo</code>, <code>LivroUsado</code> e <code>LivroRaro</code> herdam de <code>Livro</code> e sobrescrevem
+        <code>calcular_preco()</code>/<code>descricao_catalogo()</code> com regras próprias. O catálogo chama o mesmo método
+        em qualquer livro, e o comportamento varia conforme o tipo real do objeto — <strong>polimorfismo</strong>.
+      </p>
+    </div>
+  </section>
+
+  <!-- 7. Código - Encapsulamento e Sobrecarga -->
+  <section class="slide">
+    <div class="eyebrow">Implementação</div>
+    <h2>Encapsulamento e Sobrecarga de Método</h2>
+    <div class="body" style="display:flex;flex-direction:column;">
+<pre><span class="cm"># dominio/item_acervo.py</span>
+class Livro(ABC):
+    def __init__(self, isbn, titulo, autor, secao, preco_base, quantidade):
+        self.__isbn = self.__validar_isbn(isbn)   <span class="cm"># atributo privado</span>
+        ...
+
+    @staticmethod
+    def __validar_isbn(isbn: str) -> str:           <span class="cm"># método privado</span>
+        digitos = isbn.replace("-", "").replace(" ", "")
+        if len(digitos) not in (10, 13) or not digitos.isdigit():
+            raise ValueError(f"ISBN inválido: {isbn!r}")
+        return digitos
+
+
+<span class="cm"># servicos/estoque.py</span>
+class Estoque:
+    @singledispatchmethod
+    def adicionar(self, item: object, quantidade: int = 0) -> None:
+        raise TypeError(...)
+
+    @adicionar.register
+    def _(self, item: Livro, quantidade: int = 0) -> None:
+        ...                                          <span class="cm"># adicionar(livro)</span>
+
+    @adicionar.register
+    def _(self, item: str, quantidade: int = 0) -> None:
+        ...                                          <span class="cm"># adicionar(isbn, quantidade)</span>
+</pre>
+      <p class="code-caption">
+        <code>__isbn</code> e <code>__validar_isbn</code> são privados (name mangling). <code>Estoque.adicionar()</code> é
+        <strong>sobrecarregado</strong> via <code>@singledispatchmethod</code>: aceita um objeto <code>Livro</code> completo
+        ou apenas um ISBN (<code>str</code>) com a quantidade a somar.
+      </p>
+    </div>
+  </section>
+
+  <!-- 8. Programa Principal -->
+  <section class="slide">
+    <div class="eyebrow">Implementação</div>
+    <h2>Programa Principal</h2>
+    <div class="body" style="display:flex;flex-direction:column;">
+<pre><span class="cm"># main.py</span>
+def main() -> None:
+    repositorio = RepositorioJson(CAMINHO_ACERVO)
+    estoque = Estoque(repositorio.carregar())          <span class="cm"># objeto 1</span>
+    catalogo = Catalogo(estoque)                        <span class="cm"># objeto 2</span>
+
+    repositorio_usuarios = RepositorioUsuariosJson(CAMINHO_USUARIOS)
+    usuarios = Usuarios(repositorio_usuarios.carregar())  <span class="cm"># objeto 3</span>
+
+    repositorio_caixa = RepositorioCaixaJson(CAMINHO_CAIXA)
+    vendas = repositorio_caixa.carregar()
+    caixa = Caixa(estoque)                               <span class="cm"># objeto 4</span>
+
+    app = App(                                            <span class="cm"># objeto 5</span>
+        catalogo, estoque, usuarios, caixa,
+        persistir_acervo=lambda: repositorio.salvar(estoque.livros),
+        persistir_usuarios=lambda: repositorio_usuarios.salvar(usuarios.usuarios),
+        persistir_venda=_persistir_venda,
+    )
+    app.mainloop()
+</pre>
+      <p class="code-caption">
+        O programa principal instancia múltiplos objetos (<code>Estoque</code>, <code>Catalogo</code>,
+        <code>Usuarios</code>, <code>Caixa</code>, <code>App</code>) e conecta as camadas de domínio, serviços e
+        infraestrutura antes de iniciar a interface gráfica.
+      </p>
+    </div>
+  </section>
+
+  <!-- 9. Tela Login -->
+  <section class="slide screen-slide">
+    <div class="eyebrow">Sistema em funcionamento</div>
+    <h2>Tela de Login</h2>
+    <div class="body">
+      <img src="captures/login.png" alt="Tela de login">
+      <div class="screen-caption">
+        <p>Ponto de entrada da aplicação.</p>
+        <ul>
+          <li>Autenticação por e-mail e senha, validada contra <code>usuarios.json</code></li>
+          <li>Link "Criar conta de cliente" leva à tela de cadastro</li>
+          <li>Após o login, a navegação é adaptada ao perfil (cliente ou administrador)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10. Tela Criar Conta -->
+  <section class="slide screen-slide">
+    <div class="eyebrow">Sistema em funcionamento</div>
+    <h2>Criar Conta de Cliente</h2>
+    <div class="body">
+      <img src="captures/criar-usuario.png" alt="Tela de criação de conta">
+      <div class="screen-caption">
+        <p>Cadastro self-service para novos clientes.</p>
+        <ul>
+          <li>Campos: nome, e-mail, senha e confirmação de senha</li>
+          <li>Valida igualdade entre senha e confirmação</li>
+          <li>Garante e-mail único antes de criar a conta</li>
+          <li>Login automático após o cadastro</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11. Tela Catálogo Cliente -->
+  <section class="slide screen-slide">
+    <div class="eyebrow">Sistema em funcionamento</div>
+    <h2>Catálogo — Cliente</h2>
+    <div class="body">
+      <img src="captures/tela-catalogo-cliente.png" alt="Catálogo do cliente">
+      <div class="screen-caption">
+        <p>Visão principal do cliente, com busca, filtros e carrinho.</p>
+        <ul>
+          <li>Busca por título, autor ou seção, com filtros de seção e estado de conservação</li>
+          <li>Cada livro mostra preço calculado e status de estoque em tempo real</li>
+          <li>Seletor de quantidade e botão "Adicionar ao carrinho" por item</li>
+          <li>Carrinho à direita, com total acumulado</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12. Tela Checkout -->
+  <section class="slide screen-slide">
+    <div class="eyebrow">Sistema em funcionamento</div>
+    <h2>Checkout — Cliente</h2>
+    <div class="body">
+      <img src="captures/tela-checkout-cliente.png" alt="Checkout do cliente">
+      <div class="screen-caption">
+        <p>Finalização da compra a partir do carrinho.</p>
+        <ul>
+          <li>Itens do carrinho com subtotal e opção de remover</li>
+          <li>Total calculado automaticamente</li>
+          <li>"Finalizar compra" dá baixa no estoque e registra a venda em <code>caixa.json</code></li>
+          <li>Diálogo de confirmação exibe o total da compra realizada</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13. Tela Catálogo Admin -->
+  <section class="slide screen-slide">
+    <div class="eyebrow">Sistema em funcionamento</div>
+    <h2>Catálogo — Administrador</h2>
+    <div class="body">
+      <img src="captures/tela-catalogo-admin.png" alt="Catálogo do administrador">
+      <div class="screen-caption">
+        <p>O administrador acessa a mesma busca/filtros do cliente, sem carrinho.</p>
+        <ul>
+          <li>Barra de navegação com abas "Catálogo" e "Estoque"</li>
+          <li>Visão de leitura do acervo, útil para conferência rápida</li>
+          <li>Cabeçalho identifica o usuário e seu nível de acesso (Administrador)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 14. Tela Estoque Admin -->
+  <section class="slide screen-slide">
+    <div class="eyebrow">Sistema em funcionamento</div>
+    <h2>Estoque — Administrador</h2>
+    <div class="body">
+      <img src="captures/tela-estoque-admin.png" alt="Estoque do administrador">
+      <div class="screen-caption">
+        <p>Painel de gestão completa do acervo (CRUD).</p>
+        <ul>
+          <li>Tabela com ISBN, título, autor, seção, tipo, preço e quantidade</li>
+          <li>Formulário "Cadastro de Livro" para criar ou editar um título</li>
+          <li>Campos condicionais conforme o tipo (Novo / Usado / Raro)</li>
+          <li>Botões "Novo", "Salvar" e "Excluir" controlam o ciclo de vida do registro</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 15. Encerramento -->
+  <section class="slide closing">
+    <div class="ornament">❦</div>
+    <h2>Obrigado!</h2>
+    <p class="lead">Floreios e Borrões — catálogo digital e gestão de acervo</p>
+    <p class="lead">Anderson Rodrigues · Brunno Colombo · João Vitor Santos</p>
+  </section>
+
+</div>
+
+<div class="nav">
+  <button id="prevBtn">&larr; Anterior</button>
+  <span class="counter" id="counter">1 / 15</span>
+  <button id="nextBtn">Próximo &rarr;</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  let current = 0;
+
+  function show(index) {
+    slides[current].classList.remove('active');
+    current = Math.max(0, Math.min(index, slides.length - 1));
+    slides[current].classList.add('active');
+    document.getElementById('counter').textContent = (current + 1) + ' / ' + slides.length;
+    document.getElementById('prevBtn').disabled = current === 0;
+    document.getElementById('nextBtn').disabled = current === slides.length - 1;
+  }
+
+  document.getElementById('prevBtn').addEventListener('click', () => show(current - 1));
+  document.getElementById('nextBtn').addEventListener('click', () => show(current + 1));
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ') show(current + 1);
+    if (e.key === 'ArrowLeft') show(current - 1);
+  });
+
+  show(0);
+</script>
+
+</body>
+</html>

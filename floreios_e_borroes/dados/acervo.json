@@ -5,7 +5,7 @@
     "autor": "Jorge Amado",
     "secao": "Ficção",
     "preco_base": 49.9,
-    "quantidade": 7,
+    "quantidade": 6,
     "tipo": "novo"
   },
   {
@@ -14,7 +14,7 @@
     "autor": "Machado de Assis",
     "secao": "Clássicos",
     "preco_base": 40.0,
-    "quantidade": 0,
+    "quantidade": 2,
     "tipo": "usado",
     "estado_conservacao": "BOM"
   },
@@ -24,7 +24,7 @@
     "autor": "Antoine de Saint-Exupéry",
     "secao": "Ficção",
     "preco_base": 35.0,
-    "quantidade": 12,
+    "quantidade": 11,
     "tipo": "novo"
   },
   {
@@ -81,6 +81,15 @@
     "autor": "TESTE",
     "secao": "Clássico",
     "preco_base": 50.0,
+    "quantidade": 1,
+    "tipo": "novo"
+  },
+  {
+    "isbn": "9788535914749",
+    "titulo": "Pinoquio",
+    "autor": "Pedro",
+    "secao": "Fantasia",
+    "preco_base": 2.99,
     "quantidade": 1,
     "tipo": "novo"
   }

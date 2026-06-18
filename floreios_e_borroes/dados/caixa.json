@@ -32,5 +32,31 @@
     ],
     "data_hora": "2026-06-17T23:48:08.965985",
     "total": 56.0
+  },
+  {
+    "cliente_email": "brunno@exemplo.com",
+    "cliente_nome": "Brunno",
+    "itens": [
+      {
+        "isbn": "9788535914849",
+        "titulo": "Dom Casmurro",
+        "quantidade": 1,
+        "preco_unitario": 28.0
+      },
+      {
+        "isbn": "9788535909554",
+        "titulo": "Capitães da Areia",
+        "quantidade": 1,
+        "preco_unitario": 49.9
+      },
+      {
+        "isbn": "9788525406958",
+        "titulo": "O Pequeno Príncipe",
+        "quantidade": 1,
+        "preco_unitario": 35.0
+      }
+    ],
+    "data_hora": "2026-06-18T12:26:39.480144",
+    "total": 112.9
   }
 ]
