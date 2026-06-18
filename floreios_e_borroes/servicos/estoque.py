@@ -41,6 +41,18 @@ class Estoque:
             raise ValueError(f"Livro com ISBN {item!r} não encontrado no estoque")
         livro.quantidade += quantidade
 
+    def vender(self, isbn: str, quantidade: int) -> None:
+        livro = self.buscar_por_isbn(isbn)
+        if livro is None:
+            raise ValueError(f"Livro com ISBN {isbn!r} não encontrado no estoque")
+        if quantidade <= 0:
+            raise ValueError("A quantidade vendida deve ser maior que zero")
+        if livro.quantidade < quantidade:
+            raise ValueError(
+                f"Estoque insuficiente para o ISBN {isbn!r}: disponível {livro.quantidade}, solicitado {quantidade}"
+            )
+        livro.quantidade -= quantidade
+
     def remover(self, isbn: str) -> None:
         livro = self.buscar_por_isbn(isbn)
         if livro is None:

@@ -5,7 +5,7 @@
     "autor": "Jorge Amado",
     "secao": "Ficção",
     "preco_base": 49.9,
-    "quantidade": 8,
+    "quantidade": 7,
     "tipo": "novo"
   },
   {
@@ -14,7 +14,7 @@
     "autor": "Machado de Assis",
     "secao": "Clássicos",
     "preco_base": 40.0,
-    "quantidade": 3,
+    "quantidade": 0,
     "tipo": "usado",
     "estado_conservacao": "BOM"
   },

@@ -6,7 +6,9 @@ from typing import Any
 from dominio.item_acervo import Livro
 from dominio.livro_raro import GrauRaridade
 from dominio.livro_usado import EstadoConservacao
-from dominio.usuario import Administrador, Usuario
+from dominio.usuario import Administrador, Cliente, Usuario
+from dominio.venda import Venda
+from servicos.caixa import Caixa
 from servicos.catalogo import Catalogo
 from servicos.estoque import Estoque
 from servicos.usuarios import EmailJaCadastradoError, Usuarios
@@ -40,8 +42,10 @@ class App(tk.Tk):
         catalogo: Catalogo,
         estoque: Estoque,
         usuarios: Usuarios,
+        caixa: Caixa,
         persistir_acervo: Callable[[], None],
         persistir_usuarios: Callable[[], None],
+        persistir_venda: Callable[[Venda], None],
     ) -> None:
         super().__init__()
         self.title("Floreios e Borrões")
@@ -72,7 +76,15 @@ class App(tk.Tk):
                 ao_autenticar=self._ao_autenticar,
                 voltar_para_login=lambda: self.mostrar_tela("login"),
             ),
-            "cliente": TelaCliente(container, catalogo),
+            "cliente": TelaCliente(
+                container,
+                catalogo,
+                estoque,
+                caixa,
+                usuario_atual=lambda: self._usuario_atual,
+                persistir_acervo=persistir_acervo,
+                persistir_venda=persistir_venda,
+            ),
             "admin": TelaAdministrador(container, estoque, persistir_acervo),
         }
         for tela in self._telas.values():
@@ -92,6 +104,7 @@ class App(tk.Tk):
 
     def _sair(self) -> None:
         self._usuario_atual = None
+        self._telas["cliente"].limpar_carrinho()
         self._atualizar_navegacao()
         self._telas["login"].limpar()
         self.mostrar_tela("login")
@@ -102,16 +115,29 @@ class App(tk.Tk):
 
         ttk.Label(barra, text="Floreios e Borrões", style="Titulo.TLabel").pack(side="left")
 
+        self._area_navegacao = ttk.Frame(barra, style="Navegacao.TFrame")
+        self._area_navegacao.pack(side="left", padx=(24, 0))
+
         self._area_usuario = ttk.Frame(barra, style="Navegacao.TFrame")
         self._area_usuario.pack(side="right")
         self._atualizar_navegacao()
 
     def _atualizar_navegacao(self) -> None:
+        for filho in self._area_navegacao.winfo_children():
+            filho.destroy()
         for filho in self._area_usuario.winfo_children():
             filho.destroy()
 
         if self._usuario_atual is None:
             return
+
+        if isinstance(self._usuario_atual, Administrador):
+            ttk.Button(
+                self._area_navegacao, text="Catálogo", command=lambda: self.mostrar_tela("cliente")
+            ).pack(side="left", padx=(0, 8))
+            ttk.Button(
+                self._area_navegacao, text="Estoque", command=lambda: self.mostrar_tela("admin")
+            ).pack(side="left")
 
         texto = f"{self._usuario_atual.nome} · {self._usuario_atual.nivel_acesso().capitalize()}"
         ttk.Label(self._area_usuario, text=texto, style="Titulo.TLabel").pack(side="left", padx=(0, 12))
@@ -291,16 +317,35 @@ class TelaCadastro(ttk.Frame):
 
 
 class TelaCliente(ttk.Frame):
-    def __init__(self, master: tk.Misc, catalogo: Catalogo) -> None:
+    def __init__(
+        self,
+        master: tk.Misc,
+        catalogo: Catalogo,
+        estoque: Estoque,
+        caixa: Caixa,
+        usuario_atual: Callable[[], Usuario | None],
+        persistir_acervo: Callable[[], None],
+        persistir_venda: Callable[[Venda], None],
+    ) -> None:
         super().__init__(master, padding=16)
         self._catalogo = catalogo
+        self._estoque = estoque
+        self._caixa = caixa
+        self._usuario_atual = usuario_atual
+        self._persistir_acervo = persistir_acervo
+        self._persistir_venda = persistir_venda
+
+        self._carrinho: dict[str, int] = {}
 
         self._termo = tk.StringVar()
         self._secao = tk.StringVar(value=SECAO_TODAS)
         self._estado = tk.StringVar(value=ESTADO_TODOS)
 
         self._montar_filtros()
-        self._montar_lista()
+        self._montar_corpo()
+
+    def _eh_cliente(self) -> bool:
+        return isinstance(self._usuario_atual(), Cliente)
 
     def atualizar(self) -> None:
         self._combo_secao["values"] = (SECAO_TODAS, *self._catalogo.secoes_disponiveis())
@@ -315,6 +360,12 @@ class TelaCliente(ttk.Frame):
         )
         for livro in livros:
             self._criar_cartao(livro)
+
+        if self._eh_cliente():
+            self._painel_carrinho.grid()
+            self._atualizar_carrinho()
+        else:
+            self._painel_carrinho.grid_remove()
 
     def _montar_filtros(self) -> None:
         filtros = ttk.Frame(self)
@@ -340,9 +391,19 @@ class TelaCliente(ttk.Frame):
 
         ttk.Button(filtros, text="Buscar", command=self.atualizar).grid(row=1, column=3, sticky="w")
 
-    def _montar_lista(self) -> None:
-        moldura = ttk.Frame(self)
-        moldura.pack(fill="both", expand=True)
+    def _montar_corpo(self) -> None:
+        corpo = ttk.Frame(self)
+        corpo.pack(fill="both", expand=True)
+        corpo.columnconfigure(0, weight=3)
+        corpo.columnconfigure(1, weight=1)
+        corpo.rowconfigure(0, weight=1)
+
+        self._montar_lista(corpo)
+        self._montar_painel_carrinho(corpo)
+
+    def _montar_lista(self, master: tk.Misc) -> None:
+        moldura = ttk.Frame(master)
+        moldura.grid(row=0, column=0, sticky="nsew")
 
         canvas = tk.Canvas(moldura, background=COR_FUNDO, highlightthickness=0)
         rolagem = ttk.Scrollbar(moldura, orient="vertical", command=canvas.yview)
@@ -354,6 +415,22 @@ class TelaCliente(ttk.Frame):
 
         canvas.pack(side="left", fill="both", expand=True)
         rolagem.pack(side="right", fill="y")
+
+    def _montar_painel_carrinho(self, master: tk.Misc) -> None:
+        self._painel_carrinho = ttk.Frame(master, style="Cartao.TFrame", padding=12)
+        self._painel_carrinho.grid(row=0, column=1, sticky="ns", padx=(12, 0))
+
+        ttk.Label(self._painel_carrinho, text="Carrinho", style="CartaoTitulo.TLabel").pack(
+            anchor="w", pady=(0, 8)
+        )
+
+        self._lista_carrinho = ttk.Frame(self._painel_carrinho, style="Cartao.TFrame")
+        self._lista_carrinho.pack(fill="both", expand=True)
+
+        self._label_total = ttk.Label(self._painel_carrinho, text="Total: R$ 0.00", style="Cartao.TLabel")
+        self._label_total.pack(anchor="w", pady=(8, 8))
+
+        ttk.Button(self._painel_carrinho, text="Finalizar compra", command=self._finalizar_compra).pack(fill="x")
 
     def _secao_selecionada(self) -> str | None:
         secao = self._secao.get()
@@ -375,6 +452,91 @@ class TelaCliente(ttk.Frame):
 
         status = "Em estoque" if livro.quantidade > 0 else "Indisponível"
         ttk.Label(cartao, text=f"{status} ({livro.quantidade} unidade(s))", style="Cartao.TLabel").pack(anchor="w")
+
+        if self._eh_cliente() and livro.quantidade > 0:
+            linha_compra = ttk.Frame(cartao, style="Cartao.TFrame")
+            linha_compra.pack(anchor="w", pady=(8, 0))
+
+            var_quantidade = tk.StringVar(value="1")
+            ttk.Spinbox(linha_compra, from_=1, to=livro.quantidade, textvariable=var_quantidade, width=5).pack(
+                side="left", padx=(0, 8)
+            )
+            ttk.Button(
+                linha_compra,
+                text="Adicionar ao carrinho",
+                command=lambda isbn=livro.isbn, var=var_quantidade: self._adicionar_ao_carrinho(isbn, var),
+            ).pack(side="left")
+
+    def _adicionar_ao_carrinho(self, isbn: str, var_quantidade: tk.StringVar) -> None:
+        try:
+            quantidade = int(var_quantidade.get())
+        except ValueError:
+            messagebox.showerror("Quantidade inválida", "Informe um número inteiro.")
+            return
+        if quantidade <= 0:
+            messagebox.showerror("Quantidade inválida", "A quantidade deve ser maior que zero.")
+            return
+
+        livro = self._estoque.buscar_por_isbn(isbn)
+        if livro is None or livro.quantidade < quantidade:
+            messagebox.showerror("Estoque insuficiente", "Quantidade indisponível em estoque.")
+            self.atualizar()
+            return
+
+        self._carrinho[isbn] = self._carrinho.get(isbn, 0) + quantidade
+        self._atualizar_carrinho()
+
+    def _atualizar_carrinho(self) -> None:
+        for filho in self._lista_carrinho.winfo_children():
+            filho.destroy()
+
+        total = 0.0
+        for isbn, quantidade in list(self._carrinho.items()):
+            livro = self._estoque.buscar_por_isbn(isbn)
+            if livro is None:
+                del self._carrinho[isbn]
+                continue
+            subtotal = livro.calcular_preco() * quantidade
+            total += subtotal
+
+            linha = ttk.Frame(self._lista_carrinho, style="Cartao.TFrame")
+            linha.pack(fill="x", pady=2)
+            ttk.Label(linha, text=f"{livro.titulo} x{quantidade}", style="Cartao.TLabel").pack(side="left")
+            ttk.Label(linha, text=f"R$ {subtotal:.2f}", style="Cartao.TLabel").pack(side="left", padx=(8, 8))
+            ttk.Button(
+                linha, text="Remover", command=lambda isbn=isbn: self._remover_do_carrinho(isbn)
+            ).pack(side="right")
+
+        self._label_total.configure(text=f"Total: R$ {total:.2f}")
+
+    def _remover_do_carrinho(self, isbn: str) -> None:
+        self._carrinho.pop(isbn, None)
+        self._atualizar_carrinho()
+
+    def limpar_carrinho(self) -> None:
+        self._carrinho.clear()
+
+    def _finalizar_compra(self) -> None:
+        cliente = self._usuario_atual()
+        if not isinstance(cliente, Cliente):
+            return
+
+        if not self._carrinho:
+            messagebox.showinfo("Carrinho vazio", "Adicione livros ao carrinho antes de finalizar.")
+            return
+
+        try:
+            venda = self._caixa.finalizar_venda(cliente, dict(self._carrinho))
+        except ValueError as erro:
+            messagebox.showerror("Não foi possível concluir a compra", str(erro))
+            self.atualizar()
+            return
+
+        self._persistir_acervo()
+        self._persistir_venda(venda)
+        self._carrinho.clear()
+        messagebox.showinfo("Compra realizada", f"Compra finalizada com sucesso. Total: R$ {venda.total():.2f}")
+        self.atualizar()
 
 
 class TelaAdministrador(ttk.Frame):
